@@ -5,6 +5,8 @@ import com.javachat.util.DatabaseConnection;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class UserDAO {
@@ -60,5 +62,18 @@ public class UserDAO {
                 return Optional.empty();
             }
         }
+    }
+
+    public List<User> findAll() throws SQLException {
+        String sql = "SELECT user_id, username FROM users ORDER BY username";
+        List<User> users = new ArrayList<>();
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                users.add(new User(rs.getInt("user_id"), rs.getString("username")));
+            }
+        }
+        return users;
     }
 }
