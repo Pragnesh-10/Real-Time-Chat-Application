@@ -17,6 +17,7 @@ public class ChatFrame extends JFrame {
     private final DefaultListModel<String> userListModel = new DefaultListModel<>();
     private final JList<String> userList = new JList<>(userListModel);
     private final Map<String, Integer> usernameToId = new HashMap<>();
+    private final Map<String, String> displayNameToUsername = new HashMap<>();
     private final JTextArea transcript = new JTextArea();
     private final JTextField messageField = new JTextField();
     private final JLabel conversationLabel = new JLabel("Choose a user to start chatting");
@@ -44,9 +45,10 @@ public class ChatFrame extends JFrame {
                 String selected = userList.getSelectedValue();
                 if (selected != null) {
                     Integer id = usernameToId.get(selected);
-                    if (id != null && id != currentUser.id()) {
+                    String username = displayNameToUsername.get(selected);
+                    if (id != null && username != null && id != currentUser.id()) {
                         selectedUserId = id;
-                        selectedUsername = selected;
+                        selectedUsername = username;
                         conversationLabel.setText("Chat with " + selectedUsername);
                         transcript.setText("");
                         controller.selectUser(selectedUserId, selectedUsername);
@@ -73,7 +75,7 @@ public class ChatFrame extends JFrame {
 
         JPanel sidebar = new JPanel(new BorderLayout(6, 6));
         sidebar.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 4));
-        sidebar.add(new JLabel("Online users"), BorderLayout.NORTH);
+        sidebar.add(new JLabel("All users (online/offline)"), BorderLayout.NORTH);
         sidebar.add(new JScrollPane(userList), BorderLayout.CENTER);
         JButton refresh = new JButton("Refresh");
         refresh.addActionListener(e -> controller.requestUsers());
@@ -89,19 +91,29 @@ public class ChatFrame extends JFrame {
         String previouslySelected = selectedUsername;
         userListModel.clear();
         usernameToId.clear();
+        displayNameToUsername.clear();
 
         for (JsonNode node : users) {
             int id = node.path("userId").asInt();
             String username = node.path("username").asText();
-            String displayName = id == currentUser.id() ? username + " (you)" : username;
+            boolean online = node.path("online").asBoolean(false);
+            String displayName = id == currentUser.id()
+                    ? username + " (you)"
+                    : username + (online ? " (online)" : " (offline)");
+
             usernameToId.put(displayName, id);
+            displayNameToUsername.put(displayName, username);
             userListModel.addElement(displayName);
         }
 
-        // The display label " (you)" is intentionally not a selectable peer.
-        if (previouslySelected != null && !previouslySelected.isBlank()) {
+        // Keep the selected conversation when the directory refreshes.
+        if (!previouslySelected.isBlank()) {
             for (int i = 0; i < userListModel.size(); i++) {
-                if (userListModel.get(i).equals(previouslySelected)) userList.setSelectedIndex(i);
+                String displayName = userListModel.get(i);
+                if (previouslySelected.equals(displayNameToUsername.get(displayName))) {
+                    userList.setSelectedIndex(i);
+                    break;
+                }
             }
         }
     }
@@ -135,7 +147,9 @@ public class ChatFrame extends JFrame {
         String sender = message.path("senderUsername").asText("unknown");
         String text = message.path("text").asText("");
         String timestamp = message.path("sentAt").asText("");
-        String time = timestamp.length() >= 16 ? timestamp.substring(11, 16) : LocalDateTime.now().format(TIME_FORMAT);
+        String time = timestamp.length() >= 16
+                ? timestamp.substring(11, 16)
+                : LocalDateTime.now().format(TIME_FORMAT);
         String label = message.path("senderId").asInt() == currentUser.id() ? "You" : sender;
         transcript.append("[" + time + "] " + label + ": " + text + "\n");
     }
@@ -144,7 +158,7 @@ public class ChatFrame extends JFrame {
         String text = messageField.getText().trim();
         if (text.isEmpty()) return;
         if (selectedUserId < 1) {
-            JOptionPane.showMessageDialog(this, "Choose an online user first.");
+            JOptionPane.showMessageDialog(this, "Choose a user first.");
             return;
         }
         controller.sendMessage(text);
