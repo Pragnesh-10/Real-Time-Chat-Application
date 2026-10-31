@@ -1,7 +1,6 @@
 package com.javachat.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.javachat.client.ChatClient;
 import com.javachat.client.ServerListener;
 import com.javachat.model.User;
@@ -28,18 +27,19 @@ public class ChatController {
         loginFrame.setVisible(true);
     }
 
-    public void connectAndLogin(String username, String password, boolean register) {
+    public void connectAndRegisterOrLogin(String username, String email, String password, boolean register) {
         if (!client.isConnected()) {
             try {
                 String host = System.getenv().getOrDefault("CHAT_HOST", "127.0.0.1");
                 int port = Integer.parseInt(System.getenv().getOrDefault("CHAT_PORT", "5050"));
                 client.connect(host, port);
-            } catch (IOException e) {
-                showLoginError("Could not connect to the chat server. Start ChatServer first.\n" + e.getMessage());
+            } catch (IOException | NumberFormatException e) {
+                showLoginError("Could not connect to the chat server. Check the server and CHAT_PORT.");
                 return;
             }
         }
-        if (register) client.requestRegister(username, password);
+
+        if (register) client.requestRegister(username, email, password);
         else client.requestLogin(username, password);
     }
 
@@ -103,10 +103,12 @@ public class ChatController {
     }
 
     private void showError(String message) {
-        if (loginFrame != null && loginFrame.isVisible()) {
-            loginFrame.showError(message);
-        } else {
-            JOptionPane.showMessageDialog(chatFrame, message, "JavaChat", JOptionPane.ERROR_MESSAGE);
-        }
+        SwingUtilities.invokeLater(() -> {
+            if (loginFrame != null && loginFrame.isVisible()) {
+                loginFrame.showError(message);
+            } else if (chatFrame != null) {
+                JOptionPane.showMessageDialog(chatFrame, message, "JavaChat", JOptionPane.ERROR_MESSAGE);
+            }
+        });
     }
 }

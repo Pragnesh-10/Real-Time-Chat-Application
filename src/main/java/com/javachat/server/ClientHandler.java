@@ -77,24 +77,35 @@ public class ClientHandler implements Runnable {
             sendError("You are already logged in.");
             return;
         }
+
         String username = text(request, "username").trim();
+        String email = text(request, "email").trim();
         String password = text(request, "password");
+
         if (!username.matches("^[A-Za-z0-9_]{3,30}$")) {
             sendError("Username must be 3-30 characters: letters, numbers, underscores.");
+            return;
+        }
+        if (email.length() > 254 || !email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            sendError("Enter a valid email address.");
             return;
         }
         if (password.length() < 8 || password.length() > 72) {
             sendError("Password must be between 8 and 72 characters.");
             return;
         }
+
         try {
-            User created = userDAO.register(username, password);
+            User created = userDAO.register(username, email, password);
             user = created;
             sendLoginSuccess(created);
             server.broadcastUsers();
         } catch (SQLException e) {
-            if (e.getErrorCode() == 1062) sendError("That username is already taken.");
-            else throw e;
+            if (e.getErrorCode() == 1062) {
+                sendError("That username or email address is already registered.");
+            } else {
+                throw e;
+            }
         }
     }
 
