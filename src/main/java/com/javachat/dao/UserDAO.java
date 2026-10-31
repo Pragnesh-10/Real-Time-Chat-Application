@@ -10,14 +10,15 @@ import java.util.List;
 import java.util.Optional;
 
 public class UserDAO {
-    public User register(String username, String password) throws SQLException {
-        String sql = "INSERT INTO users (username, password_hash) VALUES (?, ?)";
+    public User register(String username, String email, String password) throws SQLException {
+        String sql = "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)";
         String hash = BCrypt.hashpw(password, BCrypt.gensalt(12));
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, username);
-            ps.setString(2, hash);
+            ps.setString(2, email);
+            ps.setString(3, hash);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) return new User(keys.getInt(1), username);
