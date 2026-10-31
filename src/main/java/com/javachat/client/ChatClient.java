@@ -68,10 +68,11 @@ public class ChatClient implements Closeable {
         send(n);
     }
 
-    public void requestRegister(String username, String password) {
+    public void requestRegister(String username, String email, String password) {
         ObjectNode n = mapper.createObjectNode();
         n.put("type", "REGISTER");
         n.put("username", username);
+        n.put("email", email);
         n.put("password", password);
         send(n);
     }
