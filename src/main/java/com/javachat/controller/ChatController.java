@@ -7,7 +7,7 @@ import com.javachat.model.User;
 import com.javachat.view.ChatFrame;
 import com.javachat.view.LoginFrame;
 
-import javax.swing.*;
+import java.awt.EventQueue;
 import java.io.IOException;
 
 public class ChatController {
@@ -96,19 +96,33 @@ public class ChatController {
     }
 
     private void showLoginError(String message) {
-        SwingUtilities.invokeLater(() -> {
+        EventQueue.invokeLater(() -> {
             if (loginFrame != null) loginFrame.showError(message);
-            else JOptionPane.showMessageDialog(null, message, "JavaChat", JOptionPane.ERROR_MESSAGE);
+            else showDialog(null, message);
         });
     }
 
     private void showError(String message) {
-        SwingUtilities.invokeLater(() -> {
+        EventQueue.invokeLater(() -> {
             if (loginFrame != null && loginFrame.isVisible()) {
                 loginFrame.showError(message);
             } else if (chatFrame != null) {
-                JOptionPane.showMessageDialog(chatFrame, message, "JavaChat", JOptionPane.ERROR_MESSAGE);
+                chatFrame.showMessage(message);
             }
         });
+    }
+
+    private void showDialog(java.awt.Frame owner, String message) {
+        java.awt.Dialog dialog = new java.awt.Dialog(owner, "JavaChat", true);
+        dialog.setLayout(new java.awt.BorderLayout(10, 10));
+        dialog.add(new java.awt.Label(message, java.awt.Label.CENTER), java.awt.BorderLayout.CENTER);
+        java.awt.Button ok = new java.awt.Button("OK");
+        ok.addActionListener(e -> dialog.dispose());
+        java.awt.Panel buttons = new java.awt.Panel(new java.awt.FlowLayout());
+        buttons.add(ok);
+        dialog.add(buttons, java.awt.BorderLayout.SOUTH);
+        dialog.setSize(360, 140);
+        dialog.setLocationRelativeTo(owner);
+        dialog.setVisible(true);
     }
 }
