@@ -23,6 +23,7 @@ public class ChatFrame extends Frame {
     private final Label conversationLabel = new Label("Choose a user to start chatting");
     private int selectedUserId = -1;
     private String selectedUsername = "";
+    private boolean updatingUsers = false;
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
 
     public ChatFrame(ChatController controller, User currentUser) {
@@ -37,6 +38,7 @@ public class ChatFrame extends Frame {
         transcript.setFont(new Font("SansSerif", Font.PLAIN, 14));
 
         userList.addItemListener(e -> {
+            if (updatingUsers) return;
             String selected = userList.getSelectedItem();
             if (selected == null) return;
 
@@ -89,6 +91,7 @@ public class ChatFrame extends Frame {
 
     public void updateUsers(JsonNode users) {
         String previouslySelected = selectedUsername;
+        updatingUsers = true;
         userList.removeAll();
         usernameToId.clear();
         displayNameToUsername.clear();
@@ -116,6 +119,7 @@ public class ChatFrame extends Frame {
                 }
             }
         }
+        updatingUsers = false;
     }
 
     public void setConversationTitle(String username) {
