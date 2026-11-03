@@ -1,10 +1,9 @@
 package com.javachat.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.javachat.controller.ChatController;
 
-import javax.swing.SwingUtilities;
+import java.awt.EventQueue;
 
 public class ServerListener {
     private final ChatController controller;
@@ -14,6 +13,6 @@ public class ServerListener {
     }
 
     public void onEvent(JsonNode event) {
-        SwingUtilities.invokeLater(() -> controller.handleServerEvent(event));
+        EventQueue.invokeLater(() -> controller.handleServerEvent(event));
     }
 }

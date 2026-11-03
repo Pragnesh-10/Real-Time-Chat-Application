@@ -4,25 +4,26 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.javachat.controller.ChatController;
 import com.javachat.model.User;
 
-import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ChatFrame extends JFrame {
+public class ChatFrame extends Frame {
     private final ChatController controller;
     private final User currentUser;
-    private final DefaultListModel<String> userListModel = new DefaultListModel<>();
-    private final JList<String> userList = new JList<>(userListModel);
+    private final List userList = new List();
     private final Map<String, Integer> usernameToId = new HashMap<>();
     private final Map<String, String> displayNameToUsername = new HashMap<>();
-    private final JTextArea transcript = new JTextArea();
-    private final JTextField messageField = new JTextField();
-    private final JLabel conversationLabel = new JLabel("Choose a user to start chatting");
+    private final TextArea transcript = new TextArea("", 0, 0, TextArea.SCROLLBARS_VERTICAL_ONLY);
+    private final TextField messageField = new TextField();
+    private final Label conversationLabel = new Label("Choose a user to start chatting");
     private int selectedUserId = -1;
     private String selectedUsername = "";
+    private boolean updatingUsers = false;
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
 
     public ChatFrame(ChatController controller, User currentUser) {
@@ -31,65 +32,67 @@ public class ChatFrame extends JFrame {
 
         setTitle("JavaChat - " + currentUser.username());
         setSize(850, 560);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
 
         transcript.setEditable(false);
-        transcript.setLineWrap(true);
-        transcript.setWrapStyleWord(true);
         transcript.setFont(new Font("SansSerif", Font.PLAIN, 14));
 
-        userList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        userList.addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                String selected = userList.getSelectedValue();
-                if (selected != null) {
-                    Integer id = usernameToId.get(selected);
-                    String username = displayNameToUsername.get(selected);
-                    if (id != null && username != null && id != currentUser.id()) {
-                        selectedUserId = id;
-                        selectedUsername = username;
-                        conversationLabel.setText("Chat with " + selectedUsername);
-                        transcript.setText("");
-                        controller.selectUser(selectedUserId, selectedUsername);
-                    }
-                }
+        userList.addItemListener(e -> {
+            if (updatingUsers) return;
+            String selected = userList.getSelectedItem();
+            if (selected == null) return;
+
+            Integer id = usernameToId.get(selected);
+            String username = displayNameToUsername.get(selected);
+            if (id != null && username != null && id != currentUser.id()) {
+                selectedUserId = id;
+                selectedUsername = username;
+                conversationLabel.setText("Chat with " + selectedUsername);
+                transcript.setText("");
+                controller.selectUser(selectedUserId, selectedUsername);
             }
         });
 
-        JButton sendButton = new JButton("Send");
+        Button sendButton = new Button("Send");
         sendButton.addActionListener(e -> send());
         messageField.addActionListener(e -> send());
 
-        JPanel bottom = new JPanel(new BorderLayout(8, 0));
-        bottom.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        Panel bottom = new Panel(new BorderLayout(8, 0));
         bottom.add(messageField, BorderLayout.CENTER);
         bottom.add(sendButton, BorderLayout.EAST);
 
-        JPanel chatPanel = new JPanel(new BorderLayout(8, 8));
-        chatPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        Panel chatPanel = new Panel(new BorderLayout(8, 8));
         conversationLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
         chatPanel.add(conversationLabel, BorderLayout.NORTH);
-        chatPanel.add(new JScrollPane(transcript), BorderLayout.CENTER);
+        chatPanel.add(transcript, BorderLayout.CENTER);
         chatPanel.add(bottom, BorderLayout.SOUTH);
 
-        JPanel sidebar = new JPanel(new BorderLayout(6, 6));
-        sidebar.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 4));
-        sidebar.add(new JLabel("All users (online/offline)"), BorderLayout.NORTH);
-        sidebar.add(new JScrollPane(userList), BorderLayout.CENTER);
-        JButton refresh = new JButton("Refresh");
+        Panel sidebar = new Panel(new BorderLayout(6, 6));
+        sidebar.add(new Label("All users (online/offline)"), BorderLayout.NORTH);
+        sidebar.add(userList, BorderLayout.CENTER);
+        Button refresh = new Button("Refresh");
         refresh.addActionListener(e -> controller.requestUsers());
         sidebar.add(refresh, BorderLayout.SOUTH);
         sidebar.setPreferredSize(new Dimension(210, 0));
 
-        setLayout(new BorderLayout());
         add(sidebar, BorderLayout.WEST);
         add(chatPanel, BorderLayout.CENTER);
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                dispose();
+                System.exit(0);
+            }
+        });
+
+        setLocationRelativeTo(null);
     }
 
     public void updateUsers(JsonNode users) {
         String previouslySelected = selectedUsername;
-        userListModel.clear();
+        updatingUsers = true;
+        userList.removeAll();
         usernameToId.clear();
         displayNameToUsername.clear();
 
@@ -103,19 +106,20 @@ public class ChatFrame extends JFrame {
 
             usernameToId.put(displayName, id);
             displayNameToUsername.put(displayName, username);
-            userListModel.addElement(displayName);
+            userList.add(displayName);
         }
 
-        // Keep the selected conversation when the directory refreshes.
+        // Restore the previous conversation without triggering a duplicate selection.
         if (!previouslySelected.isBlank()) {
-            for (int i = 0; i < userListModel.size(); i++) {
-                String displayName = userListModel.get(i);
+            for (int i = 0; i < userList.getItemCount(); i++) {
+                String displayName = userList.getItem(i);
                 if (previouslySelected.equals(displayNameToUsername.get(displayName))) {
-                    userList.setSelectedIndex(i);
+                    userList.select(i);
                     break;
                 }
             }
         }
+        updatingUsers = false;
     }
 
     public void setConversationTitle(String username) {
@@ -127,7 +131,7 @@ public class ChatFrame extends JFrame {
         transcript.setText("");
         JsonNode messages = event.path("messages");
         for (JsonNode message : messages) appendMessage(message);
-        transcript.setCaretPosition(transcript.getDocument().getLength());
+        transcript.setCaretPosition(transcript.getText().length());
     }
 
     public void receiveMessage(JsonNode message) {
@@ -137,7 +141,7 @@ public class ChatFrame extends JFrame {
 
         if (otherId == selectedUserId) {
             appendMessage(message);
-            transcript.setCaretPosition(transcript.getDocument().getLength());
+            transcript.setCaretPosition(transcript.getText().length());
         } else if (recipientId == currentUser.id()) {
             Toolkit.getDefaultToolkit().beep();
         }
@@ -151,17 +155,31 @@ public class ChatFrame extends JFrame {
                 ? timestamp.substring(11, 16)
                 : LocalDateTime.now().format(TIME_FORMAT);
         String label = message.path("senderId").asInt() == currentUser.id() ? "You" : sender;
-        transcript.append("[" + time + "] " + label + ": " + text + "\n");
+        transcript.append("[" + time + "] " + label + ": " + text + System.lineSeparator());
     }
 
     private void send() {
         String text = messageField.getText().trim();
         if (text.isEmpty()) return;
         if (selectedUserId < 1) {
-            JOptionPane.showMessageDialog(this, "Choose a user first.");
+            showMessage("Choose a user first.");
             return;
         }
         controller.sendMessage(text);
         messageField.setText("");
+    }
+
+    public void showMessage(String message) {
+        Dialog dialog = new Dialog(this, "JavaChat", true);
+        dialog.setLayout(new BorderLayout(10, 10));
+        dialog.add(new Label(message, Label.CENTER), BorderLayout.CENTER);
+        Button ok = new Button("OK");
+        ok.addActionListener(e -> dialog.dispose());
+        Panel buttons = new Panel(new FlowLayout(FlowLayout.CENTER));
+        buttons.add(ok);
+        dialog.add(buttons, BorderLayout.SOUTH);
+        dialog.setSize(320, 130);
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 }
