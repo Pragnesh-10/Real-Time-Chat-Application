@@ -5,12 +5,6 @@ import com.javachat.controller.ChatController;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Authentication window with a welcome screen and separate login and
@@ -102,8 +96,8 @@ public class LoginFrame extends Frame {
         Label message = new Label("Choose how you want to continue.", Label.CENTER);
         message.setFont(new Font("SansSerif", Font.PLAIN, 14));
 
-        ColorButton loginButton = createButton("Login", new Color(37, 99, 235), Color.WHITE);
-        ColorButton createAccountButton = createButton("Create Account", new Color(22, 163, 74), Color.WHITE);
+        Button loginButton = createButton("Login");
+        Button createAccountButton = createButton("Create Account");
 
         loginButton.addActionListener(e -> showLoginForm());
         createAccountButton.addActionListener(e -> showRegisterForm());
@@ -118,31 +112,52 @@ public class LoginFrame extends Frame {
     }
 
     private Panel createLoginPanel() {
-        Panel panel = new Panel(new BorderLayout(12, 16));
+        Panel panel = new Panel(new BorderLayout(12, 18));
         panel.setBackground(Color.WHITE);
 
         Label heading = new Label("Login to your account", Label.CENTER);
         heading.setFont(new Font("SansSerif", Font.BOLD, 20));
         panel.add(heading, BorderLayout.NORTH);
 
-        Panel fields = new Panel(new GridLayout(2, 2, 10, 14));
+        // Keep the two input rows together in the center of the form.
+        Panel fields = new Panel(new GridBagLayout());
         fields.setBackground(Color.WHITE);
-        fields.add(new Label("Username"));
-        fields.add(loginUsernameField);
-        fields.add(new Label("Password"));
-        fields.add(loginPasswordField);
-        panel.add(fields, BorderLayout.CENTER);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 12, 10, 12);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        ColorButton submitButton = createButton("Login", new Color(37, 99, 235), Color.WHITE);
-        ColorButton createAccountButton = createButton("Create Account", new Color(22, 163, 74), Color.WHITE);
-        ColorButton backButton = createButton("Back", new Color(225, 229, 235), new Color(35, 42, 52));
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        fields.add(new Label("Username:"), gbc);
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        fields.add(loginUsernameField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 0;
+        fields.add(new Label("Password:"), gbc);
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        fields.add(loginPasswordField, gbc);
+
+        Panel center = new Panel(new GridBagLayout());
+        center.setBackground(Color.WHITE);
+        center.add(fields);
+        panel.add(center, BorderLayout.CENTER);
+
+        // The Login action is placed below the password field, never on top of it.
+        Button submitButton = createButton("Login");
+        Button createAccountButton = createButton("Create Account");
+        Button backButton = createButton("Back");
 
         submitButton.addActionListener(e -> submitLogin());
         loginPasswordField.addActionListener(e -> submitLogin());
         createAccountButton.addActionListener(e -> showRegisterForm());
         backButton.addActionListener(e -> showWelcome());
 
-        Panel actions = new Panel(new GridLayout(1, 3, 8, 0));
+        Panel actions = new Panel(new FlowLayout(FlowLayout.CENTER, 12, 8));
         actions.setBackground(Color.WHITE);
         actions.add(submitButton);
         actions.add(createAccountButton);
@@ -172,9 +187,9 @@ public class LoginFrame extends Frame {
         fields.add(confirmPasswordField);
         panel.add(fields, BorderLayout.CENTER);
 
-        ColorButton submitButton = createButton("Create Account", new Color(22, 163, 74), Color.WHITE);
-        ColorButton loginButton = createButton("I already have an account", new Color(37, 99, 235), Color.WHITE);
-        ColorButton backButton = createButton("Back", new Color(225, 229, 235), new Color(35, 42, 52));
+        Button submitButton = createButton("Create Account");
+        Button loginButton = createButton("I already have an account");
+        Button backButton = createButton("Back");
 
         submitButton.addActionListener(e -> submitRegistration());
         confirmPasswordField.addActionListener(e -> submitRegistration());
@@ -191,108 +206,13 @@ public class LoginFrame extends Frame {
         return panel;
     }
 
-    private ColorButton createButton(String text, Color background, Color foreground) {
-        return new ColorButton(text, background, foreground);
-    }
-
     /**
-     * A custom-drawn button built with AWT Canvas.
-     * This avoids the native macOS AWT Button appearance overriding its colors.
+     * Creates a standard AWT button with the platform's normal appearance.
      */
-    private static class ColorButton extends Canvas {
-        private final String text;
-        private final Color buttonColor;
-        private final Color textColor;
-        private final List<ActionListener> listeners = new ArrayList<>();
-        private boolean hovered;
-        private boolean pressed;
-
-        ColorButton(String text, Color buttonColor, Color textColor) {
-            this.text = text;
-            this.buttonColor = buttonColor;
-            this.textColor = textColor;
-            setFont(new Font("SansSerif", Font.BOLD, 13));
-            setPreferredSize(new Dimension(150, 42));
-            setMinimumSize(new Dimension(100, 38));
-            setCursor(new Cursor(Cursor.HAND_CURSOR));
-            setFocusable(true);
-
-            addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    hovered = true;
-                    repaint();
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    hovered = false;
-                    pressed = false;
-                    repaint();
-                }
-
-                @Override
-                public void mousePressed(MouseEvent e) {
-                    if (e.getButton() == MouseEvent.BUTTON1) {
-                        pressed = true;
-                        requestFocus();
-                        repaint();
-                    }
-                }
-
-                @Override
-                public void mouseReleased(MouseEvent e) {
-                    boolean activate = pressed && contains(e.getPoint());
-                    pressed = false;
-                    repaint();
-                    if (activate) {
-                        ActionEvent event = new ActionEvent(
-                                ColorButton.this,
-                                ActionEvent.ACTION_PERFORMED,
-                                text
-                        );
-                        for (ActionListener listener : listeners) {
-                            listener.actionPerformed(event);
-                        }
-                    }
-                }
-            });
-        }
-
-        public void addActionListener(ActionListener listener) {
-            listeners.add(listener);
-        }
-
-        @Override
-        public Dimension getPreferredSize() {
-            return new Dimension(180, 42);
-        }
-
-        @Override
-        public void paint(Graphics graphics) {
-            Graphics2D g = (Graphics2D) graphics.create();
-            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON);
-
-            Color fill = buttonColor;
-            if (pressed) {
-                fill = buttonColor.darker();
-            } else if (hovered) {
-                fill = buttonColor.brighter();
-            }
-
-            int arc = 12;
-            g.setColor(fill);
-            g.fillRoundRect(1, 1, getWidth() - 3, getHeight() - 3, arc, arc);
-
-            g.setFont(getFont());
-            g.setColor(textColor);
-            FontMetrics metrics = g.getFontMetrics();
-            int x = (getWidth() - metrics.stringWidth(text)) / 2;
-            int y = (getHeight() - metrics.getHeight()) / 2 + metrics.getAscent();
-            g.drawString(text, x, y);
-            g.dispose();
-        }
+    private Button createButton(String text) {
+        Button button = new Button(text);
+        button.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        return button;
     }
 
     private void showWelcome() {
