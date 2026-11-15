@@ -1,6 +1,6 @@
 # JavaChat
 
-A Java Swing desktop chat application using TCP sockets, MySQL, JDBC, Maven, and an MVC-inspired structure.
+A Java AWT desktop chat application using TCP sockets, MySQL, JDBC, Maven, and an MVC-inspired structure.
 
 ## Requirements
 
@@ -49,7 +49,7 @@ Run `src/main/java/com/javachat/App.java`. Register a user. Run `App` again to c
 - JSON-lines protocol over TCP
 - Private messages and persistent message history
 - Online user list
-- Swing login and chat windows
+- AWT login and chat windows
 - MySQL persistence using JDBC and DAO classes
 
 ## Notes
