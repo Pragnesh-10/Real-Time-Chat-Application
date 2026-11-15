@@ -97,8 +97,8 @@ public class LoginFrame extends Frame {
         Label message = new Label("Choose how you want to continue.", Label.CENTER);
         message.setFont(new Font("SansSerif", Font.PLAIN, 14));
 
-        Button loginButton = createButton("Login", new Color(37, 99, 235), Color.WHITE);
-        Button createAccountButton = createButton("Create Account", new Color(22, 163, 74), Color.WHITE);
+        JButton loginButton = createButton("Login", new Color(37, 99, 235), Color.WHITE);
+        JButton createAccountButton = createButton("Create Account", new Color(22, 163, 74), Color.WHITE);
 
         loginButton.addActionListener(e -> showLoginForm());
         createAccountButton.addActionListener(e -> showRegisterForm());
@@ -128,9 +128,9 @@ public class LoginFrame extends Frame {
         fields.add(loginPasswordField);
         panel.add(fields, BorderLayout.CENTER);
 
-        Button submitButton = createButton("Login", new Color(37, 99, 235), Color.WHITE);
-        Button createAccountButton = createButton("Create Account", new Color(22, 163, 74), Color.WHITE);
-        Button backButton = createButton("Back", new Color(225, 229, 235), new Color(35, 42, 52));
+        JButton submitButton = createButton("Login", new Color(37, 99, 235), Color.WHITE);
+        JButton createAccountButton = createButton("Create Account", new Color(22, 163, 74), Color.WHITE);
+        JButton backButton = createButton("Back", new Color(225, 229, 235), new Color(35, 42, 52));
 
         submitButton.addActionListener(e -> submitLogin());
         loginPasswordField.addActionListener(e -> submitLogin());
@@ -167,9 +167,9 @@ public class LoginFrame extends Frame {
         fields.add(confirmPasswordField);
         panel.add(fields, BorderLayout.CENTER);
 
-        Button submitButton = createButton("Create Account", new Color(22, 163, 74), Color.WHITE);
-        Button loginButton = createButton("I already have an account", new Color(37, 99, 235), Color.WHITE);
-        Button backButton = createButton("Back", new Color(225, 229, 235), new Color(35, 42, 52));
+        JButton submitButton = createButton("Create Account", new Color(22, 163, 74), Color.WHITE);
+        JButton loginButton = createButton("I already have an account", new Color(37, 99, 235), Color.WHITE);
+        JButton backButton = createButton("Back", new Color(225, 229, 235), new Color(35, 42, 52));
 
         submitButton.addActionListener(e -> submitRegistration());
         confirmPasswordField.addActionListener(e -> submitRegistration());
