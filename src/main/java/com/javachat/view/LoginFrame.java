@@ -20,11 +20,9 @@ public class LoginFrame extends Frame {
     private final Panel cards = new Panel(cardLayout);
     private final Label statusLabel = new Label(" ", Label.CENTER);
 
-    // Login fields
     private final TextField loginUsernameField = new TextField(24);
     private final TextField loginPasswordField = new TextField(24);
 
-    // Registration fields
     private final TextField registerUsernameField = new TextField(24);
     private final TextField emailField = new TextField(24);
     private final TextField registerPasswordField = new TextField(24);
@@ -39,9 +37,9 @@ public class LoginFrame extends Frame {
         setLayout(new BorderLayout(16, 16));
         setBackground(new Color(245, 247, 250));
 
-        loginPasswordField.setEchoChar('\u2022');
-        registerPasswordField.setEchoChar('\u2022');
-        confirmPasswordField.setEchoChar('\u2022');
+        loginPasswordField.setEchoChar('*');
+        registerPasswordField.setEchoChar('*');
+        confirmPasswordField.setEchoChar('*');
 
         cards.add(createWelcomePanel(), WELCOME);
         cards.add(createLoginPanel(), LOGIN);
@@ -261,6 +259,5 @@ public class LoginFrame extends Frame {
     public void showError(String message) {
         statusLabel.setForeground(new Color(180, 35, 35));
         statusLabel.setText(message.length() > 75 ? message.substring(0, 72) + "..." : message);
-        statusLabel.setToolTipText(message);
     }
 }
