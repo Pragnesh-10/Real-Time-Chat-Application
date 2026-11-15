@@ -3,6 +3,7 @@ package com.javachat.view;
 import com.javachat.controller.ChatController;
 
 import java.awt.*;
+import javax.swing.JButton;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -185,11 +186,17 @@ public class LoginFrame extends Frame {
         return panel;
     }
 
-    private Button createButton(String text, Color background, Color foreground) {
-        Button button = new Button(text);
+    private JButton createButton(String text, Color background, Color foreground) {
+        JButton button = new JButton(text);
         button.setFont(new Font("SansSerif", Font.BOLD, 13));
         button.setBackground(background);
         button.setForeground(foreground);
+        button.setOpaque(true);
+        button.setContentAreaFilled(true);
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setMargin(new Insets(10, 16, 10, 16));
         return button;
     }
 
