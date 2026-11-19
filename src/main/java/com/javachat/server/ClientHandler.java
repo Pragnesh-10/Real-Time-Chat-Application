@@ -138,7 +138,7 @@ public class ClientHandler implements Runnable {
         server.broadcastUsers();
     }
 
-remove obsolete method    private void sendLoginSuccess(User found) {
+    private void sendLoginSuccess(User found) {
         ObjectNode response = mapper.createObjectNode();
         response.put("type", "LOGIN_SUCCESS");
         response.put("userId", found.id());
