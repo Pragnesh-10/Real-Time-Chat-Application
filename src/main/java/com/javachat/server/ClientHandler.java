@@ -52,8 +52,8 @@ public class ClientHandler implements Runnable {
         } catch (IOException ignored) {
             // Client disconnected.
         } finally {
-            user = null;
             server.remove(this);
+            user = null;
         }
     }
 
@@ -97,6 +97,10 @@ public class ClientHandler implements Runnable {
 
         try {
             User created = userDAO.register(username, email, password);
+            if (!server.claimSession(created, this)) {
+                sendError("This user is already connected.");
+                return;
+            }
             user = created;
             sendLoginSuccess(created);
             server.broadcastUsers();
@@ -123,9 +127,8 @@ public class ClientHandler implements Runnable {
         }
 
         User found = result.get();
-        // Prevent simultaneous sessions for the same user in this simple version.
-        boolean alreadyOnline = serverUserExists(found.id());
-        if (alreadyOnline) {
+        // Atomically prevent simultaneous sessions for the same user.
+        if (!server.claimSession(found, this)) {
             sendError("This user is already connected.");
             return;
         }
@@ -135,11 +138,7 @@ public class ClientHandler implements Runnable {
         server.broadcastUsers();
     }
 
-    private boolean serverUserExists(int id) {
-        return server.isUserOnline(id);
-    }
-
-    private void sendLoginSuccess(User found) {
+remove obsolete method    private void sendLoginSuccess(User found) {
         ObjectNode response = mapper.createObjectNode();
         response.put("type", "LOGIN_SUCCESS");
         response.put("userId", found.id());
