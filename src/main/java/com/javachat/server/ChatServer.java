@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 public class ChatServer {
     private final int port;
     private final Set<ClientHandler> clients = ConcurrentHashMap.newKeySet();
+    private final ConcurrentHashMap<Integer, ClientHandler> activeSessions = new ConcurrentHashMap<>();
     private final ExecutorService pool = Executors.newCachedThreadPool();
     private final UserDAO userDAO = new UserDAO();
     private final ObjectMapper mapper = new ObjectMapper();
@@ -50,8 +51,20 @@ public class ChatServer {
     }
 
     public void remove(ClientHandler handler) {
+        releaseSession(handler);
         clients.remove(handler);
         broadcastUsers();
+    }
+
+    /** Atomically reserves a single active session per user. */
+    public boolean claimSession(User user, ClientHandler handler) {
+        return activeSessions.putIfAbsent(user.id(), handler) == null;
+    }
+
+    private void releaseSession(ClientHandler handler) {
+        // Remove by handler identity so disconnect cleanup also works if the socket
+        // closes between claiming the session and assigning the authenticated user.
+        activeSessions.entrySet().removeIf(entry -> entry.getValue() == handler);
     }
 
     /**
@@ -84,7 +97,7 @@ public class ChatServer {
     }
 
     public boolean isUserOnline(int userId) {
-        return clients.stream().anyMatch(c -> c.isAuthenticated() && c.getUserId() == userId);
+        return activeSessions.containsKey(userId);
     }
 
     public void sendToUser(int userId, ObjectNode message) {
