@@ -62,8 +62,9 @@ public class ChatServer {
     }
 
     private void releaseSession(ClientHandler handler) {
-        int userId = handler.getUserId();
-        if (userId > 0) activeSessions.remove(userId, handler);
+        // Remove by handler identity so disconnect cleanup also works if the socket
+        // closes between claiming the session and assigning the authenticated user.
+        activeSessions.entrySet().removeIf(entry -> entry.getValue() == handler);
     }
 
     /**
